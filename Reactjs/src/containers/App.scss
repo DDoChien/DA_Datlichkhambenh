@@ -1,0 +1,21 @@
+// @import "../styles/common.scss";
+
+.dsolution-scrollbar-xl {
+    overflow-x: hidden;
+    overflow-y: overlay;
+
+    &::-webkit-scrollbar-track {
+        border-radius: 4px;
+        background-color: #fff;
+    }
+
+    &::-webkit-scrollbar {
+        width: 10px;
+        background-color: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        border-radius: 10px;
+        background-color: #e3e3e3;
+    }
+}
