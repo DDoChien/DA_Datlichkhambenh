@@ -1,46 +1,85 @@
 .content-down {
-    // height: 35%;
-    // display: flex;
-    // align-items: flex-end;
-    // justify-content: center;
-    // background-image: linear-gradient(
-    //   rgba(255, 255, 255, 0.1),
-    //   rgba(255, 255, 255, 0.9),
-    //   rgba(255, 255, 255, 1)
-    // );
-    // padding-bottom: 10px;
-    background:#f5f6fd;
-    .options {
+  background: #f5f6fd;
+  padding: 20px 0; /* Thêm padding dọc thay vì chỉ padding-bottom */
+  
+  .options {
       text-align: center;
       display: flex;
+      flex-wrap: wrap; /* Cho phép các phần tử xuống dòng khi màn hình nhỏ */
       gap: 50px;
       justify-content: center;
+      max-width: 1200px; /* Giới hạn chiều rộng tối đa */
+      margin: 0 auto; /* Căn giữa container */
+      padding: 0 15px; /* Thêm padding ngang cho mobile */
+
       .option-child {
-        width: 100px;
-        .icon-child {
-          background: white;
-          width: 40px;
-          height: 40px;
-          padding: 10px;
-          border-radius: 50%;
-          text-align: center;
-          margin: 0 auto;
-
-          i {
-            color: #49bce2;
-            font-size: 20px;
+          width: 100px;
+          min-width: 80px; /* Đảm bảo kích thước tối thiểu */
+          flex: 0 0 auto; /* Giữ kích thước cố định nhưng vẫn linh hoạt */
+          
+          .icon-child {
+              background: white;
+              width: 40px;
+              height: 40px;
+              padding: 10px;
+              border-radius: 50%;
+              text-align: center;
+              margin: 0 auto;
+              
+              i {
+                  color: #49bce2;
+                  font-size: 20px;
+              }
           }
-        }
 
-        .text-child {
-          font-size: 17px;
-          font-weight: 500;
-          cursor: pointer;
-
-          &:hover {
-            color: #49bce2;
+          .text-child {
+              font-size: 17px;
+              font-weight: 500;
+              cursor: pointer;
+              
+              &:hover {
+                  color: #49bce2;
+              }
           }
-        }
       }
-    }
   }
+
+  /* Media Queries cho responsive */
+  @media screen and (max-width: 768px) {
+      .options {
+          gap: 30px; /* Giảm khoảng cách trên tablet */
+      }
+      
+      .option-child {
+          width: 80px; /* Giảm kích thước trên tablet */
+          
+          .text-child {
+              font-size: 15px; /* Giảm kích thước chữ */
+          }
+      }
+  }
+
+  @media screen and (max-width: 480px) {
+      .options {
+          gap: 20px; /* Giảm khoảng cách trên mobile */
+      }
+      
+      .option-child {
+          width: 70px; /* Giảm kích thước trên mobile */
+          
+          .icon-child {
+              width: 35px;
+              height: 35px;
+              padding: 8px;
+              
+              i {
+                  font-size: 18px;
+              }
+          }
+          
+          .text-child {
+              font-size: 14px;
+          }
+      }
+  }
+}

@@ -148,7 +148,7 @@ export default function HomeHeader({isShowBanner}){
   
     
             <div className="content-up position-relative">
-              <div class="position-absolute" style={{bottom:"0%",left:"50%",transform:"translateX(-50%)"}}>
+              <div class="position-absolute" >
                 {/* <div className="title1 pt-8">
                   <FormattedMessage id="banner.title1" />
                 </div>
