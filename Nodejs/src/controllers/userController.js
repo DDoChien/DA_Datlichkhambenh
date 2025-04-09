@@ -38,9 +38,25 @@ let handleGetAllUsers = async (req, res) => {
 };
 
 let handleCreateNewUser = async (req, res) => {
-  let message = await userService.createNewUser(req.body);
-  return res.status(200).json(message);
+  try {
+    let result = await userService.createNewUser(req.body);
+
+    if (result.errCode === 0) {
+      return res.status(201).json(result); // 201 Created nếu tạo thành công
+    } else if (result.errCode === 1) {
+      return res.status(409).json(result); // 409 Conflict nếu email đã tồn tại
+    } else {
+      return res.status(400).json(result); // 400 Bad Request nếu có lỗi khác
+    }
+
+  } catch (e) {
+    return res.status(500).json({
+      errCode: -1,
+      errMessage: "Internal server error",
+    });
+  }
 };
+
 
 let handleEditUser = async (req, res) => {
   let data = req.body;

@@ -207,25 +207,7 @@ let filterDoctors = (data) => {
   });
 };
 
-// let getAllDoctors = () => {
-//   return new Promise(async (resolve, reject) => {
-//     try {
-//       let doctors = await db.User.findAll({
-//         where: { roleId: "R2" },
-//         attributes: {
-//           exclude: ["password", "image"],
-//         },
-//       });
 
-//       resolve({
-//         errCode: 0,
-//         data: doctors,
-//       });
-//     } catch (e) {
-//       reject(e);
-//     }
-//   });
-// };
 let checkRequiredFields = (inputData) => {
   let arrFields = [
     "doctorId",
@@ -408,107 +390,120 @@ let getDetailDoctorById = (inputId) => {
   });
 };
 
+
+//tạo nhiều lịch khám mới cho một bác sĩ
 let bulkCreateSchedule = (data) => {
   return new Promise(async (resolve, reject) => {
     try {
+      // Kiểm tra các tham số bắt buộc: danh sách lịch, id bác sĩ, ngày khám
       if (!data.arrSchedule || !data.doctorId || !data.date) {
         resolve({
           errCode: 1,
-          errMessage: "Missing required param",
+          errMessage: "Missing required param", // Thiếu tham số bắt buộc
         });
       } else {
         let schedule = data.arrSchedule;
+
+        // Nếu có lịch, gán số lượng bệnh nhân tối đa cho mỗi lịch
         if (schedule && schedule.length > 0) {
           schedule = schedule.map((item) => {
-            item.maxNumber = MAX_NUMBER_SCHEDULE;
+            item.maxNumber = MAX_NUMBER_SCHEDULE; // Gán maxNumber cho từng lịch khám
             return item;
           });
         }
 
-        //get all existing data
+        // Lấy tất cả các lịch đã có trong hệ thống theo doctorId và date
         let existing = await db.Schedule.findAll({
-          where: { doctorId: data.doctorId, date: data.date },
-          attributes: ["timeType", "date", "doctorId", "maxNumber"],
-          raw: true,
+          where: { doctorId: data.doctorId, date: data.date }, // Điều kiện tìm: bác sĩ và ngày khám
+          attributes: ["timeType", "date", "doctorId", "maxNumber"], // Lấy các thuộc tính cần thiết
+          raw: true, // Trả về dữ liệu thuần (không phải instance của model Sequelize)
         });
 
-        //convert date
-        // if (existing && existing.length > 0) {
-        //   existing = existing.map((item) => {
-        //     item.date = new Date(item.date).getTime();
-        //     return item;
-        //   });
-        // }
-
-        //compare difference
+        // So sánh sự khác nhau giữa lịch mới và lịch đã tồn tại
+        // Giữ lại những lịch mới chưa có trong database (dựa vào timeType và date)
         let toCreate = _.differenceWith(schedule, existing, (a, b) => {
           return a.timeType === b.timeType && +a.date === +b.date;
         });
 
-        //create data
+        // Nếu có lịch mới cần thêm, thực hiện bulkCreate để lưu vào database
         if (toCreate && toCreate.length > 0) {
-          await db.Schedule.bulkCreate(toCreate);
+          await db.Schedule.bulkCreate(toCreate); // Tạo mới nhiều bản ghi cùng lúc
         }
 
+        // Trả kết quả thành công
         resolve({
           errCode: 0,
-          errMessage: "OK",
+          errMessage: "OK", // Thành công
         });
       }
     } catch (e) {
+    
       reject(e);
     }
   });
 };
 
+//lấy danh sách các lịch khám của một bác sĩ theo ngày
 let getScheduleByDate = (doctorId, date) => {
   return new Promise(async (resolve, reject) => {
     try {
+      // Kiểm tra nếu thiếu doctorId hoặc date thì trả lỗi
       if (!doctorId || !date) {
         resolve({
           errCode: 1,
-          errMessage: "Missing required parameter",
+          errMessage: "Missing required parameter", // Thiếu tham số bắt buộc
         });
       } else {
+        // Tìm tất cả lịch khám của bác sĩ theo ngày được truyền vào
         let dataSchedule = await db.Schedule.findAll({
-          where: { doctorId: doctorId, date: date },
+          where: { doctorId: doctorId, date: date }, // Điều kiện tìm kiếm theo bác sĩ và ngày
+
+          // Gồm các bảng liên kết (join) để lấy thêm thông tin chi tiết
           include: [
             {
               model: db.Allcode,
-              as: "timeTypeData",
-              attributes: ["valueEn", "valueVi", "value"],
+              as: "timeTypeData", // Join với bảng Allcode để lấy thông tin khung giờ
+              attributes: ["valueEn", "valueVi", "value"], // Chỉ lấy các trường cần thiết
             },
             {
               model: db.User,
-              as: "doctorData",
-              attributes: ["id","email", "firstName","lastName"],
+              as: "doctorData", // Join với bảng User để lấy thông tin bác sĩ
+              attributes: ["id","email", "firstName","lastName"], // Lấy các thông tin cơ bản của bác sĩ
+              
+              // Tiếp tục join sâu hơn vào bảng Doctor_Infor
               include: [
                 {
                   model: db.Doctor_Infor,
-                  attributes: ["id","doctorId","specialtyId","clinicId"],
+                  attributes: ["id","doctorId","specialtyId","clinicId"], // Thông tin chuyên ngành và phòng khám
+                  
+                  // Join với bảng Specialty để lấy tên chuyên khoa
                   include: [
                     {
                       model: db.Specialty,
                       as: "specialtyData",
-                      attributes: ["name"],
+                      attributes: ["name"], // Lấy tên chuyên khoa
                     },
                     {
                       model: db.Clinic,
                       as: "clinicData",
-                      attributes: ["name"],
+                      attributes: ["name"], // Lấy tên phòng khám
                     },
                   ],
                 },
               ],
             },
           ],
-          raw: false,
-          nest: true,
+
+          raw: false, // Trả về dữ liệu dưới dạng đối tượng Sequelize (có thể truy cập quan hệ)
+          nest: true, // Cho phép lồng các bảng liên kết vào đúng cấu trúc
         });
 
+        // Nếu không tìm thấy lịch nào thì gán mảng rỗng
         if (!dataSchedule) {
           dataSchedule = [];
         }
+
+        // Trả kết quả thành công kèm dữ liệu lịch khám
         resolve({
           errCode: 0,
           data: dataSchedule,
@@ -520,6 +515,8 @@ let getScheduleByDate = (doctorId, date) => {
   });
 };
 
+
+//lấy thông tin bổ sung
 let getExtraInforDoctorById = (doctorId) => {
   return new Promise(async (resolve, reject) => {
     try {
@@ -906,83 +903,7 @@ let createRemedy = (data) => {
         doc.pipe(fs.createWriteStream("./src/assets/pdf/remedy/"+nameRemedy));
 
 
-        //create image remedy
-        //get today
-        // let today = new Date();
-        // let dd = String(today.getDate()).padStart(2, "0");
-        // let mm = String(today.getMonth() + 1).padStart(2, "0"); //January is 0!
-        // let yyyy = today.getFullYear();
-
-        // today = dd + "/" + mm + "/" + yyyy;
-        // let contentImageVi = `
-        // <html>
-        // <body> 
-        //   <h3>Thông tin đơn thuốc ngày: ${today}</h3>
-        //    <h3>Bác sĩ phụ trách: ${data.doctorName}</h3>
-        //   <h3>Bệnh nhân: ${data.patientName}</h3>
-        //   <h3>Email: ${data.email}</h3>
-        //    <table border="1">
-        //       <tr>
-        //         <th>Tên thuốc</th>
-        //         <th>Đơn vị</th>
-        //         <th>Số lượng</th>
-        //         <th>Hướng dẫn sử dụng</th>
-        //       </tr>
-        //       ${data.listSeletedDrugs.map((drug) => {
-        //         return (`
-        //           <tr>
-        //             <td>${drug.name}</td>
-        //             <td>${drug.unit}</td>
-        //             <td>${drug.amount}</td>
-        //             <td>${drug.description_usage}</td>
-        //           </tr>`
-        //         );
-        //       })}
-        //   </table>
-        //   <h3>Thông tin thêm: ${data.desciption}</h3>
-        // </body>
-        // </html>
-        // `;
-
-        // let contentImageEn = `
-        // <html>
-        // <body> 
-        //   <h3>Date prescription information: ${today}</h3>
-        //    <h3>Doctor in charge: ${data.doctorName}</h3>
-        //   <h3>Patient: ${data.patientName}</h3>
-        //   <h3>Email: ${data.email}</h3>
-        //    <table border="1">
-        //       <tr>
-        //         <th>Drug name</th>
-        //         <th>Unit</th>
-        //         <th>Quantity</th>
-        //         <th>User manual</th>
-        //       </tr>
-        //       ${data.listSeletedDrugs.map((drug) => {
-        //         return (`
-        //           <tr>
-        //             <td>${drug.name}</td>
-        //             <td>${drug.unit}</td>
-        //             <td>${drug.amount}</td>
-        //             <td>${drug.description_usage}</td>
-        //           </tr>`
-        //         );
-        //       })}
-        //   </table>
-        //   <h3>More information: ${data.desciption}</h3>
-        // </body>
-        // </html>
-        // `;
-
-        // let dataUriBase64;
-
-        // const images = await nodeHtmlToImage({
-        //   html: data.language=="vi" ? contentImageVi : contentImageEn
-        // });
-        // let base64data = images.toString("base64");
-        // dataUriBase64 = "data:image/jpeg;base64," + base64data;
-
-        //update patient status
+       
         let appoinment = await db.Booking.findOne({
           where: {
             doctorId: data.doctorId,
@@ -1713,78 +1634,7 @@ let createInvoice = (data) => {
         let nameInvoice= "invoice-"+uid()+".pdf";
         doc.pipe(fs.createWriteStream("./src/assets/pdf/invoice/"+nameInvoice));
 
-        //create image invoice
-        //get today
-        // let today = new Date();
-        // let dd = String(today.getDate()).padStart(2, "0");
-        // let mm = String(today.getMonth() + 1).padStart(2, "0"); //January is 0!
-        // let yyyy = today.getFullYear();
-
-        // today = dd + "/" + mm + "/" + yyyy;
-        // let contentImageVi = `
-        // <html>
-        // <body> 
-        //   <h3>Thông tin hóa đơn khám bệnh ngày: ${today}</h3>
-        //   <h3>Bác sĩ phụ trách: ${data.doctorName}</h3>
-        //   <h3>Bệnh nhân: ${data.patientName}</h3>
-        //   <h3>Email: ${data.email}</h3>
-        //    <table border="1">
-        //       <tr>
-        //         <th>Dịch vụ</th>
-        //         <th>Thành tiền(VND)</th>
-        //       </tr>
-        //       ${data.listServices.map((service) => {
-        //         return (`
-        //           <tr>
-        //             <td>${service.name}</td>
-        //             <td>${service.amount*23} VND</td>
-        //           </tr>`
-        //         );
-        //       })}
-        //       <tr>
-        //         <td>Tổng tiền</td>
-        //         <td>${data.totalAmount*23} VND</td>
-        //       </tr>
-        //   </table>
-        // </body>
-        // </html>
-        // `;
-
-        // let contentImageEn = `
-        // <html>
-        // <body> 
-        //   <h3>Information on medical examination bill date: ${today}</h3>
-        //    <h3>Doctor in charge: ${data.doctorName}</h3>
-        //   <h3>Patient: ${data.patientName}</h3>
-        //   <h3>Email: ${data.email}</h3>
-        //    <table border="1">
-        //       <tr>
-        //         <th>Service</th>
-        //         <th>Amount</th>
-        //       </tr>
-        //       ${data.listServices.map((service) => {
-        //         return (`
-        //           <tr>
-        //             <td>${service.name}</td>
-        //             <td>${service.amount} $</td>
-        //           </tr>`
-        //         );
-        //       })}
-        //       <tr>
-        //         <td>Total amount</td>
-        //         <td>${data.totalAmount} $</td>
-        //       </tr>
-        //   </table>
-        // </body>
-        // </html>
-        // `;
-        // let dataUriBase64;
-
-        // const images = await nodeHtmlToImage({
-        //   html: data.language=="vi" ? contentImageVi : contentImageEn
-        // });
-        // let base64data = images.toString("base64");
-        // dataUriBase64 = "data:image/jpeg;base64," + base64data;
+       
 
         //update invoice
         let invoice = await db.Invoice.findOne({

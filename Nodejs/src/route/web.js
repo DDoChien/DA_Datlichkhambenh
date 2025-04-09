@@ -7,6 +7,8 @@ import clinicController from "../controllers/clinicController";
 import adminController from "../controllers/adminController";
 import drugController from "../controllers/drugController";
 const chatbotController = require('../controllers/chatbotController');
+const { verifyToken } = require('../middleware/authMiddleware');
+
 
 let router = express.Router();
 const fs = require("fs");
@@ -18,7 +20,7 @@ let initWebRoutes = (app) => {
 
 //   router.get("/", (req, res) => {
 //     return res.render("homepage", { data: "Hello world with Do Cong Chien from views" });
-// });
+//  });
 
 
 

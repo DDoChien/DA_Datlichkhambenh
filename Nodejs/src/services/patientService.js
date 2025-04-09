@@ -124,7 +124,7 @@ let postBookAppointment = (data) => {
   });
 };
 
-//Hàm này xác nhận lịch hẹn khi bệnh nhân bấm vào liên kết trong email
+//xác nhận lịch hẹn khi bệnh nhân bấm vào liên kết trong email
 let postVerifyBookAppointment = (data) => {
   return new Promise(async (resolve, reject) => {
     try {

@@ -4,7 +4,7 @@ import "./ManageScheduleOneDoctor.scss";
 import { FormattedMessage } from "react-intl";
 import Select from "react-select";
 import * as actions from "../../../store/actions";
-import { LANGUAGES } from "../../../utils";
+import { CRUD_ACTIONS, LANGUAGES, dateFormat } from "../../../utils";
 import DatePicker from "../../../components/Input/DatePicker";
 import moment from "moment";
 import { toast } from "react-toastify";
@@ -31,7 +31,7 @@ class ManageScheduleOneDoctor extends Component {
     let result = [];
     let { language } = this.props;
     if (inputData && inputData.length > 0) {
-      inputData.map((item) => {
+      inputData.map((item, index) => {
         let object = {};
         let labelVi = `${item.lastName} ${item.firstName}`;
         let labelEn = `${item.firstName} ${item.lastName}`;
@@ -43,12 +43,24 @@ class ManageScheduleOneDoctor extends Component {
     return result;
   };
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate(prevProps, prevState, snapshot) {
     if (prevProps.allDoctors !== this.props.allDoctors) {
       let dataSelect = this.buildDataInputSelect(this.props.allDoctors);
-      this.setState({
-        listDoctors: dataSelect,
-      });
+      this.setState(
+        {
+          listDoctors: dataSelect,
+        },
+        () => {
+          if (this.props.userInfo && this.state.listDoctors) {
+            let listDoctors_copy = [...this.state.listDoctors];
+            let userDoctorCurrent = listDoctors_copy.find(
+              (item) => item.value === this.props.userInfo.id
+            );
+
+            this.setState({ selectedDoctor: userDoctorCurrent });
+          }
+        }
+      );
     }
 
     if (prevProps.allScheduleTime !== this.props.allScheduleTime) {
@@ -60,6 +72,12 @@ class ManageScheduleOneDoctor extends Component {
         rangeTime: data,
       });
     }
+    // if (prevProps.language !== this.props.language) {
+    //   let dataSelect = this.buildDataInputSelect(this.props.allDoctors);
+    //   this.setState({
+    //     listDoctors: dataSelect,
+    //   });
+    // }
   }
 
   handleChangeSelect = async (selectedOption) => {
@@ -67,9 +85,13 @@ class ManageScheduleOneDoctor extends Component {
   };
 
   handleOnChangeDatePicker = (date) => {
+    console.log("date",date)
     this.setState({
       currentDate: date[0],
     });
+
+    let todayDate = moment(moment()._d).format("YYYY/MM/DD");
+    let rangTimeCopy;
 
     let data = this.props.allScheduleTime;
     if (data && data.length > 0) {
@@ -85,6 +107,7 @@ class ManageScheduleOneDoctor extends Component {
     if (rangeTime && rangeTime.length > 0) {
       rangeTime = rangeTime.map((item) => {
         if (item.id === time.id) item.isSelected = !item.isSelected;
+
         return item;
       });
       this.setState({
@@ -96,22 +119,24 @@ class ManageScheduleOneDoctor extends Component {
   handleSaveSchedule = async () => {
     let { rangeTime, selectedDoctor, currentDate } = this.state;
     let result = [];
-
     if (!currentDate) {
-      toast.error(
-        this.props.language === "en" ? "Invalid date!" : "Ngày không hợp lệ!"
-      );
+      if(this.props.language=="en"){
+        toast.error("Invalid date!");
+      }else{
+        toast.error("Ngày không hợp lệ!");
+      }
       return;
     }
     if (selectedDoctor && _.isEmpty(selectedDoctor)) {
-      toast.error(
-        this.props.language === "en"
-          ? "Invalid selected doctor!"
-          : "Bác sĩ được chọn không hợp lệ!"
-      );
+      if(this.props.language=="en"){
+        toast.error("Invalid selected doctor!");
+      }else{
+        toast.error("Bác sĩ được chọn không hợp lệ!");
+      }
       return;
     }
 
+    // let formatedDate = moment(currentDate).format(dateFormat.SEND_TO_SERVER);
     let formatedDate = new Date(currentDate).getTime();
 
     if (rangeTime && rangeTime.length > 0) {
@@ -125,11 +150,11 @@ class ManageScheduleOneDoctor extends Component {
           result.push(object);
         });
       } else {
-        toast.error(
-          this.props.language === "en"
-            ? "Invalid selected time!"
-            : "Thời gian không hợp lệ!"
-        );
+        if(this.props.language=="en"){
+          toast.error("Invalid selected time!");
+        }else{
+          toast.error("Thời gian không hợp lệ!");
+        }
         return;
       }
     }
@@ -139,24 +164,26 @@ class ManageScheduleOneDoctor extends Component {
       doctorId: selectedDoctor.value,
       date: formatedDate,
     });
-
     if (res && res.errCode === 0) {
-      toast.success(
-        this.props.language === "en"
-          ? "Save info succeed!"
-          : "Lưu thông tin thành công!"
-      );
+      if(this.props.language=="en"){
+        toast.success("Save infor succeed!");
+      }else{
+        toast.success("Lưu thông tin thành công!");
+      }
     } else {
-      toast.error(
-        this.props.language === "en" ? "Error!" : "Lỗi!"
-      );
+      if(this.props.language=="en"){
+        toast.error("error!");
+      }else{
+        toast.error("Lỗi!");
+      }
     }
   };
-
   render() {
     let { rangeTime } = this.state;
     let { language } = this.props;
+    let yesterday = new Date(new Date().setDate(new Date().getDate() - 1));
     let today = new Date(new Date().setDate(new Date().getDate()));
+    let tomorrow = new Date(new Date().setDate(new Date().getDate() + 1));
 
     return (
       <div className="manage-schedule-container">
@@ -165,7 +192,16 @@ class ManageScheduleOneDoctor extends Component {
         </div>
         <div className="container">
           <div className="row">
-            {/* Chọn ngày trước */}
+            <div className="col-6 form-group">
+              <label>
+                <FormattedMessage id="manage-schedule.choose-doctor" />
+              </label>
+              <Select
+                value={this.state.selectedDoctor}
+                // onChange={this.handleChangeSelect}
+                // options={this.state.listDoctors}
+              />
+            </div>
             <div className="col-6 form-group">
               <label>
                 <FormattedMessage id="manage-schedule.choose-date" />
@@ -177,20 +213,6 @@ class ManageScheduleOneDoctor extends Component {
                 minDate={today}
               />
             </div>
-
-            {/* Chọn bác sĩ sau */}
-            <div className="col-6 form-group">
-              <label>
-                <FormattedMessage id="manage-schedule.choose-doctor" />
-              </label>
-              <Select
-                value={this.state.selectedDoctor}
-                onChange={this.handleChangeSelect}
-                options={this.state.listDoctors}
-              />
-            </div>
-
-            {/* Chọn khung giờ */}
             <div className="col-12 pick-hour-container">
               {rangeTime &&
                 rangeTime.length > 0 &&
@@ -210,8 +232,6 @@ class ManageScheduleOneDoctor extends Component {
                   );
                 })}
             </div>
-
-            {/* Nút lưu */}
             <div className="col-12">
               <button
                 className="btn btn-primary btn-save-schedule"
@@ -227,15 +247,24 @@ class ManageScheduleOneDoctor extends Component {
   }
 }
 
-const mapStateToProps = (state) => ({
-  language: state.app.language,
-  allDoctors: state.admin.allDoctors,
-  allScheduleTime: state.admin.allScheduleTime,
-});
+const mapStateToProps = (state) => {
+  return {
+    isLoggedIn: state.user.isLoggedIn,
+    language: state.app.language,
+    allDoctors: state.admin.allDoctors,
+    allScheduleTime: state.admin.allScheduleTime,
+    userInfo: state.user.userInfo,
+  };
+};
 
-const mapDispatchToProps = (dispatch) => ({
-  fetchAllDoctors: () => dispatch(actions.fetchAllDoctors()),
-  fetchAllScheduleTime: () => dispatch(actions.fetchAllScheduleTime()),
-});
+const mapDispatchToProps = (dispatch) => {
+  return {
+    fetchAllDoctors: () => dispatch(actions.fetchAllDoctors()),
+    fetchAllScheduleTime: () => dispatch(actions.fetchAllScheduleTime()),
+  };
+};
 
-export default connect(mapStateToProps, mapDispatchToProps)(ManageScheduleOneDoctor);
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(ManageScheduleOneDoctor);

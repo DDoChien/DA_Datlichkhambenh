@@ -47,7 +47,7 @@
 }
 
 .subs-title {
-  font-weight: 400;
+  font-weight: 700;
   font-size: 12px;
 }
 
@@ -211,22 +211,49 @@
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
+  transition: border-color 0.3s ease;
+  cursor: pointer;
 }
 
+.avatar-profile:hover {
+  border-color: #49bce2;
+}
+
+/* Responsive for mobile */
 @media (max-width: 768px) {
   .home-header-banner {
     height: 300px;
   }
+
   .title1, .title2 {
     font-size: 28px;
   }
+
   .search-bar {
     max-width: 90%;
   }
+
   .options {
     gap: 20px;
   }
+
   .option-child {
     width: 80px;
   }
+
+  .avatar-profile {
+    min-height: 40px;
+    min-width: 40px;
+  }
+}
+
+/* === CUSTOM ADDED CSS === */
+.mx-10 {
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+.menu-home-header {
+  display: flex;
+  align-items: center;
 }

@@ -424,25 +424,28 @@ function downloadImage(url, filepath) {
 let handleLoginGoogle = (data) => {
   return new Promise(async (resolve, reject) => {
     try {
-    let userData = {};
+      let userData = {}; 
 
-     let googleUser = await googleAuth(data.tokenId)
+      // Xác thực token Google và lấy thông tin người dùng
+      let googleUser = await googleAuth(data.tokenId);
 
+      // Tìm hoặc tạo người dùng trong database dựa trên email từ Google
       let user = await db.User.findOrCreate({
-        where: { email: googleUser.email },
-        defaults: {
+        where: { email: googleUser.email }, // Tìm user theo email
+        defaults: { // Nếu không tìm thấy, tạo mới với các giá trị mặc định
           email: googleUser.email,
-          roleId: "R3",
-          firstName: googleUser.fullname,
-          // image: avatar
+          roleId: "R3", 
+          firstName: googleUser.fullname, // Tên đầy đủ từ Google
+          // image: avatar 
         },
       });
 
       let currentUser;
-      if(user){
-        currentUser= await db.User.findOne({
-          where: { email: user[0].email },
-          attributes: [
+      if (user) {
+        // Lấy thông tin chi tiết của user vừa tìm hoặc tạo
+        currentUser = await db.User.findOne({
+          where: { email: user[0].email }, // Lấy user theo email
+          attributes: [ // Các trường cần lấy
             "id",
             "email",
             "roleId",
@@ -456,9 +459,9 @@ let handleLoginGoogle = (data) => {
             "birthday",
             "employeeOfClinic"
           ],
-          include: [
+          include: [ // Kết hợp dữ liệu từ các bảng liên quan
             {
-              model: db.Doctor_Infor,
+              model: db.Doctor_Infor, // Thông tin bác sĩ (nếu có)
               attributes: ["priceId", "specialtyId"],
               include: [
                 {
@@ -469,28 +472,28 @@ let handleLoginGoogle = (data) => {
               ],
             },
             {
-              model: db.Clinic,
+              model: db.Clinic, // Thông tin phòng khám (nếu user là nhân viên)
               as: "employeeClinicData",
-              attributes: ["id","name", "address","descriptionMarkdown","descriptionHTML","image"],
+              attributes: ["id", "name", "address", "descriptionMarkdown", "descriptionHTML", "image"],
             },
           ],
-          raw: true,
-          nest: true,
+          raw: true, // Trả về dữ liệu dạng thô
+          nest: true, // Lồng dữ liệu từ các bảng liên quan
         });
       }
 
-      if(currentUser){
-        userData.errCode = 0;
+      // Nếu tìm thấy hoặc tạo thành công user, chuẩn bị dữ liệu trả về
+      if (currentUser) {
+        userData.errCode = 0; // Thành công
         userData.errMessage = "OK";
-        delete currentUser.password;
-        userData.user = currentUser;
+        delete currentUser.password; // Xóa mật khẩu khỏi dữ liệu trả về
+        userData.user = currentUser; // Gán thông tin user vào userData
       }
 
-      resolve(
-        userData
-      );
+      // Trả về kết quả
+      resolve(userData);
     } catch (e) {
-      reject(e);
+      reject(e); // Nếu có lỗi, reject Promise với lỗi
     }
   });
 };

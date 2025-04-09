@@ -4,13 +4,10 @@ import { connect } from "react-redux";
 import { LANGUAGES, CRUD_ACTIONS, CommonUtils } from "../../../utils";
 import * as actions from "../../../store/actions";
 import "./UserRedux.scss";
-
 import Lightbox from "react-image-lightbox";
-import "react-image-lightbox/style.css"; // This only needs to be imported once in your app
-
+import "react-image-lightbox/style.css";
 import TableManageUser from "./TableManageUser";
-import {withRouter} from '../../../utils/withRouter';  //navigate
-
+import { withRouter } from '../../../utils/withRouter';
 import { filterUsers } from "../../../services/userService";
 
 class UserRedux extends Component {
@@ -36,8 +33,25 @@ class UserRedux extends Component {
 
       action: "",
       userEditId: "",
-      listFilterUsers:[]
+      listFilterUsers: [],
+      currentUserRoleId: "", // Lưu roleId của người dùng hiện tại
     };
+  }
+
+  parseJwt(token) {
+    try {
+      const base64Url = token.split(".")[1];
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split("")
+          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+          .join("")
+      );
+      return JSON.parse(jsonPayload);
+    } catch (e) {
+      return null;
+    }
   }
 
   async componentDidMount() {
@@ -45,14 +59,20 @@ class UserRedux extends Component {
     this.props.getPositionStart();
     this.props.getRoleStart();
 
-    await this.handleFilterUsers()
+    const token = localStorage.getItem("token");
+    if (token) {
+      const decodedToken = this.parseJwt(token);
+      if (decodedToken && decodedToken.roleId) {
+        this.setState({
+          currentUserRoleId: decodedToken.roleId,
+        });
+      }
+    }
+
+    await this.handleFilterUsers();
   }
 
   componentDidUpdate(prevProps, prevState, snapshot) {
-    //render=>didupdate
-    //hien tai(this) va qua khu(previous)
-    //[] [3]
-    //[3] [3]
     if (prevProps.genderRedux !== this.props.genderRedux) {
       let arrGenders = this.props.genderRedux;
       this.setState({
@@ -120,7 +140,6 @@ class UserRedux extends Component {
     let { action } = this.state;
 
     if (action === CRUD_ACTIONS.CREATE) {
-      //fire redux create user
       this.props.createNewUser({
         email: this.state.email,
         password: this.state.password,
@@ -135,7 +154,6 @@ class UserRedux extends Component {
       });
     }
     if (action === CRUD_ACTIONS.EDIT) {
-      //fire redux edit user
       this.props.editAUserRedux({
         id: this.state.userEditId,
         email: this.state.email,
@@ -174,9 +192,7 @@ class UserRedux extends Component {
 
   onChangeInput = (event, id) => {
     let copyState = { ...this.state };
-
     copyState[id] = event.target.value;
-
     this.setState({
       ...copyState,
     });
@@ -205,10 +221,9 @@ class UserRedux extends Component {
     });
   };
 
-  handleFilterUsers = async ()=>{
+  handleFilterUsers = async () => {
     let {
       email,
-      password,
       firstName,
       lastName,
       phoneNumber,
@@ -216,29 +231,27 @@ class UserRedux extends Component {
       gender,
       position,
       role,
-      avatar,
     } = this.state;
 
-    let data={
-      firstName:firstName,
-      lastName:lastName,
-      email:email,
-      role:role,
-      address:address,
-      position:position,
-      gender:gender
+    let data = {
+      firstName: firstName,
+      lastName: lastName,
+      email: email,
+      role: role,
+      address: address,
+      position: position,
+      gender: gender,
+    };
+
+    let res = await filterUsers(data);
+    if (res && res.data) {
+      this.setState({
+        listFilterUsers: res.data.reverse(),
+      });
     }
+  };
 
-    let res = await filterUsers(data)
-    if(res && res.data){
-          this.setState({
-            listFilterUsers:res.data.reverse()
-          })
-    }
-
-  }
-
-  handleReset =async ()=>{
+  handleReset = async () => {
     this.setState({
       email: "",
       password: "",
@@ -254,21 +267,18 @@ class UserRedux extends Component {
       previewImgURL: "",
     });
 
-    let res = await filterUsers({})
-    if(res && res.data){
-          this.setState({
-            listFilterUsers:res.data.reverse()
-          })
+    let res = await filterUsers({});
+    if (res && res.data) {
+      this.setState({
+        listFilterUsers: res.data.reverse(),
+      });
     }
-
-  }
-
+  };
 
   render() {
     let genders = this.state.genderArr;
     let roles = this.state.roleArr;
     let positions = this.state.positionArr;
-
     let language = this.props.language;
     let isGetGenders = this.props.isLoadingGender;
 
@@ -283,7 +293,9 @@ class UserRedux extends Component {
       position,
       role,
       avatar,
+      currentUserRoleId,
     } = this.state;
+
     return (
       <div className="user-redux-container">
         <div className="title">
@@ -292,130 +304,182 @@ class UserRedux extends Component {
         <div>{isGetGenders === true ? "Loading genders" : ""}</div>
         <div className="user-redux-body">
           <div className="container">
-            <div class="row">
-              <div class="col-12">
-                  <h3><FormattedMessage id="medical-history.filters" /></h3>
+            <div className="row">
+              <div className="col-12">
+                <h3>
+                  <FormattedMessage id="medical-history.filters" />
+                </h3>
               </div>
-                <div class="col-3">
-                  <div class="form-group">
-                    <label for="exampleInputEmail1"> <FormattedMessage id="manage-user.email" /></label>
-                    <input value={email} onChange={(event)=>this.onChangeInput(event,"email")} type="text" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" placeholder="" />
-                  </div>
+              <div className="col-3">
+                <div className="form-group">
+                  <label htmlFor="exampleInputEmail1">
+                    <FormattedMessage id="manage-user.email" />
+                  </label>
+                  <input
+                    value={email}
+                    onChange={(event) => this.onChangeInput(event, "email")}
+                    type="text"
+                    className="form-control"
+                    id="exampleInputEmail1"
+                    aria-describedby="emailHelp"
+                    placeholder=""
+                  />
                 </div>
-                <div class="col-3">
-                  <div class="form-group">
-                    <label for="exampleInputEmail1"> <FormattedMessage id="manage-user.first-name" /></label>
-                    <input value={firstName} onChange={(event)=>this.onChangeInput(event,"firstName")} type="text" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" placeholder="" />
-                  </div>
+              </div>
+              <div className="col-3">
+                <div className="form-group">
+                  <label htmlFor="exampleInputEmail1">
+                    <FormattedMessage id="manage-user.first-name" />
+                  </label>
+                  <input
+                    value={firstName}
+                    onChange={(event) => this.onChangeInput(event, "firstName")}
+                    type="text"
+                    className="form-control"
+                    id="exampleInputEmail1"
+                    aria-describedby="emailHelp"
+                    placeholder=""
+                  />
                 </div>
-                <div class="col-3">
-                  <div class="form-group">
-                    <label for="exampleInputEmail1"> <FormattedMessage id="manage-user.last-name" /></label>
-                    <input value={lastName} onChange={(event)=>this.onChangeInput(event,"lastName")} type="text" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" placeholder="" />
-                  </div>
+              </div>
+              <div className="col-3">
+                <div className="form-group">
+                  <label htmlFor="exampleInputEmail1">
+                    <FormattedMessage id="manage-user.last-name" />
+                  </label>
+                  <input
+                    value={lastName}
+                    onChange={(event) => this.onChangeInput(event, "lastName")}
+                    type="text"
+                    className="form-control"
+                    id="exampleInputEmail1"
+                    aria-describedby="emailHelp"
+                    placeholder=""
+                  />
                 </div>
-                <div class="col-3">
-                  <label for=""> <FormattedMessage id="manage-user.gender" /></label>
-                  <select
-                    class="form-control"
-                    onChange={(event) => {
-                      this.onChangeInput(event, "gender");
-                    }}
-                    value={gender}
-                  >
-                      <option value="">
-                            {language === LANGUAGES.VI
-                              ? "Chọn giới tính"
-                              : "Choose gender"}
-                          </option>
-                    {genders &&
-                      genders.length > 0 &&
-                      genders.map((item, index) => {
-                        return (
-                          <option key={index} value={item.keyMap}>
-                            {language === LANGUAGES.VI
-                              ? item.valueVi
-                              : item.valueEn}
-                          </option>
-                        );
-                      })}
-                  </select>
-                </div>
-                <div class="col-3">
+              </div>
+              <div className="col-3">
+                <label>
+                  <FormattedMessage id="manage-user.gender" />
+                </label>
+                <select
+                  className="form-control"
+                  onChange={(event) => this.onChangeInput(event, "gender")}
+                  value={gender}
+                >
+                  <option value="">
+                    {language === LANGUAGES.VI
+                      ? "Chọn giới tính"
+                      : "Choose gender"}
+                  </option>
+                  {genders &&
+                    genders.length > 0 &&
+                    genders.map((item, index) => (
+                      <option key={index} value={item.keyMap}>
+                        {language === LANGUAGES.VI
+                          ? item.valueVi
+                          : item.valueEn}
+                      </option>
+                    ))}
+                </select>
+              </div>
+              <div className="col-3">
                 <label>
                   <FormattedMessage id="manage-user.role" />
                 </label>
                 <select
-                  class="form-control"
-                  onChange={(event) => {
-                    this.onChangeInput(event, "role");
-                  }}
+                  className="form-control"
+                  onChange={(event) => this.onChangeInput(event, "role")}
                   value={role}
                 >
-                      <option value="">
-                          {language === LANGUAGES.VI
-                            ? "Chọn vai trò"
-                            : "Choose role"}
-                      </option>
+                  <option value="">
+                    {language === LANGUAGES.VI
+                      ? "Chọn vai trò"
+                      : "Choose role"}
+                  </option>
                   {roles &&
                     roles.length > 0 &&
-                    roles.map((item, index) => {
-                      return (
-                        <option key={index} value={item.keyMap}>
-                          {language === LANGUAGES.VI
-                            ? item.valueVi
-                            : item.valueEn}
-                        </option>
-                      );
-                    })}
+                    roles.map((item, index) => (
+                      <option key={index} value={item.keyMap}>
+                        {language === LANGUAGES.VI
+                          ? item.valueVi
+                          : item.valueEn}
+                      </option>
+                    ))}
                 </select>
               </div>
-              <div class="col-3">
-                  <div class="form-group">
-                    <label for="exampleInputEmail1"><FormattedMessage id="manage-user.address" /></label>
-                    <input value={address} onChange={(event)=>this.onChangeInput(event,"address")} type="text" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" placeholder="" />
-                  </div>
+              <div className="col-3">
+                <div className="form-group">
+                  <label htmlFor="exampleInputEmail1">
+                    <FormattedMessage id="manage-user.address" />
+                  </label>
+                  <input
+                    value={address}
+                    onChange={(event) => this.onChangeInput(event, "address")}
+                    type="text"
+                    className="form-control"
+                    id="exampleInputEmail1"
+                    aria-describedby="emailHelp"
+                    placeholder=""
+                  />
                 </div>
-                <div class="col-3">
+              </div>
+              <div className="col-3">
                 <label>
                   <FormattedMessage id="manage-user.position" />
                 </label>
                 <select
-                  class="form-control"
-                  onChange={(event) => {
-                    this.onChangeInput(event, "position");
-                  }}
+                  className="form-control"
+                  onChange={(event) => this.onChangeInput(event, "position")}
                   value={position}
                 >
-                    <option value="">
-                          {language === LANGUAGES.VI
-                            ? "Chọn chức danh"
-                            : "Choose positon"}
-                        </option>
+                  <option value="">
+                    {language === LANGUAGES.VI
+                      ? "Chọn chức danh"
+                      : "Choose position"}
+                  </option>
                   {positions &&
                     positions.length > 0 &&
-                    positions.map((item, index) => {
-                      return (
-                        <option key={index} value={item.keyMap}>
-                          {language === LANGUAGES.VI
-                            ? item.valueVi
-                            : item.valueEn}
-                        </option>
-                      );
-                    })}
+                    positions.map((item, index) => (
+                      <option key={index} value={item.keyMap}>
+                        {language === LANGUAGES.VI
+                          ? item.valueVi
+                          : item.valueEn}
+                      </option>
+                    ))}
                 </select>
               </div>
-              <div class="col-12">
-                  <button onClick={()=>this.handleFilterUsers()} type="button" class="btn btn-primary mr-5"><FormattedMessage id="medical-history.apply" /></button> 
-                  <button  onClick={()=>this.handleReset()} type="button" class="btn btn-primary"><FormattedMessage id="medical-history.reset" /></button> 
+              <div className="col-12">
+                <button
+                  onClick={() => this.handleFilterUsers()}
+                  type="button"
+                  className="btn btn-primary mr-5"
+                >
+                  <FormattedMessage id="medical-history.apply" />
+                </button>
+                <button
+                  onClick={() => this.handleReset()}
+                  type="button"
+                  className="btn btn-primary"
+                >
+                  <FormattedMessage id="medical-history.reset" />
+                </button>
               </div>
 
-            </div>
-            <div className="row">
-              <div class="col-12 mb-5 text-right">
-                <button type="submit" class="btn btn-primary pointer mr-5"
-                  onClick={()=>{this.props.navigate(`/admin-dashboard/user/create`);}}
-                  ><i class="fas fa-plus-circle mr-5"></i><FormattedMessage id="manage-user.btn-create" /></button>
+              <div className="col-12 mb-5 text-right">
+                {/* Chỉ hiển thị nút Create nếu roleId là "R1" */}
+                {currentUserRoleId === "R1" && (
+                  <button
+                    type="submit"
+                    className="btn btn-primary pointer mr-5"
+                    onClick={() => {
+                      this.props.navigate(`/admin-dashboard/user/create`);
+                    }}
+                  >
+                    <i className="fas fa-plus-circle mr-5"></i>
+                    <FormattedMessage id="manage-user.btn-create" />
+                  </button>
+                )}
               </div>
               <div className="col-12 mb-5">
                 <TableManageUser
@@ -423,6 +487,7 @@ class UserRedux extends Component {
                   handleReset={this.handleReset}
                   handleEditUserFromParentKey={this.handleEditUserFromParent}
                   action={this.state.action}
+                  currentUserRoleId={currentUserRoleId}
                 />
               </div>
             </div>
@@ -459,8 +524,6 @@ const mapDispatchToProps = (dispatch) => {
     createNewUser: (data) => dispatch(actions.createNewUser(data)),
     fetchUserRedux: () => dispatch(actions.fetchAllUsersStart()),
     editAUserRedux: (data) => dispatch(actions.editAUser(data)),
-    // changeLanguageAppRedux: (language) =>
-    //   dispatch(actions.changeLanguageApp(language)),
   };
 };
 

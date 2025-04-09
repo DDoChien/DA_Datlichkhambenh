@@ -64,9 +64,6 @@ export default function Login(){
   const handleOnChangePassword = (event) => {
     setPassword(event.target.value)
   };
-
-
-
   const handleLogin = async () => {
     setErrMessage("")
     try {
@@ -94,8 +91,6 @@ export default function Login(){
     setIsShowPassword(!isShowPassword)
   };
 
-
-  
   const handleKeyDown = (event) => {
     if (event.key === "Enter") {
       handleLogin();
@@ -130,7 +125,6 @@ export default function Login(){
       <>
       <HomeHeader isShowBanner={false} />
       <div className="login-background">
-
         <div className="login-container">
           <div className="login-content row">
             <div className="col-12 text-login"><FormattedMessage id={"login.login"} /></div>

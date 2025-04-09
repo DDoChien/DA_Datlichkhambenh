@@ -24,14 +24,14 @@ const getDoctorsByDepartment = async (department) => {
     const departmentMapping = {
       
       
-      "Cơ Xương Khớp": 5,
-      "Thần kinh": 6,
-      "Tiêu hóa": 9,
-      "Tim mạch": 10,
-      "Tai Mũi Họng": 11,
-      "Cột sống": 12,
-      "Y học Cổ truyền": 13,
-      "Châm cứu": 14,
+      "Cơ Xương Khớp": 22,
+      "Thần kinh": 23,
+      "Tiêu hóa": 24,
+      "Tim mạch": 25,
+      "Tai Mũi Họng": 26,
+      "Cột sống": 27,
+      "Y học Cổ truyền": 28,
+      "Châm cứu": 29,
     };
 
     const specialtyId = departmentMapping[department];

@@ -6,10 +6,8 @@ import * as actions from "../../../store/actions";
 
 import MarkdownIt from "markdown-it";
 import MdEditor from "react-markdown-editor-lite";
-// import style manually
 import "react-markdown-editor-lite/lib/index.css";
 
-// material
 import {
   Card,
   Table,
@@ -25,7 +23,6 @@ import {
   TableContainer,
   TablePagination,
 } from "@mui/material";
-// components
 import Page from "../../../containers/AdminDashboard/components/Page";
 import Label from "../../../containers/AdminDashboard/components/Label";
 import Scrollbar from "../../../containers/AdminDashboard/components/Scrollbar";
@@ -39,19 +36,9 @@ import {
 
 import { USER_ROLE, USER_POSITION } from "../../../utils";
 import { sentenceCase } from "change-case";
+import { withRouter } from '../../../utils/withRouter';
 
-import {withRouter} from '../../../utils/withRouter';  //navigate
-
-// Register plugins if required
-// MdEditor.use(YOUR_PLUGINS_HERE);
-
-// Initialize a markdown parser
-const mdParser = new MarkdownIt(/* Markdown-it options */);
-
-// Finish!
-function handleEditorChange({ html, text }) {
-  console.log("handleEditorChange", html, text);
-}
+const mdParser = new MarkdownIt();
 
 const TABLE_HEAD = [
   { id: "name", label: "Name", alignRight: false },
@@ -72,6 +59,7 @@ const TABLE_HEAD_VI = [
   { id: "status", label: "Trạng thái", alignRight: false },
   { id: "" },
 ];
+
 class TableManageUser extends Component {
   constructor(props) {
     super(props);
@@ -81,7 +69,7 @@ class TableManageUser extends Component {
   }
 
   componentDidMount() {
-    if(this.props.listFilterUsers){
+    if (this.props.listFilterUsers) {
       this.setState({
         usersRedux: this.props.listFilterUsers,
       });
@@ -98,212 +86,121 @@ class TableManageUser extends Component {
 
   handleDeleteUser = (user) => {
     this.props.deleteAUserRedux(user.id);
-    window.location.reload(false);
+    // Gọi handleReset từ UserRedux để làm mới danh sách
+    this.props.handleReset();
   };
 
   handleEditUser = (user) => {
-    console.log("user",user)
-    this.props.navigate('/admin-dashboard/user/edit/'+user.id);
+    this.props.navigate('/admin-dashboard/user/edit/' + user.id);
   };
 
-  getValueRole=(roleId)=>{
+  getValueRole = (roleId) => {
     let language = this.props.language;
-    switch(roleId) {
+    switch (roleId) {
       case USER_ROLE.ADMIN:
-        if(language=="en")
-          return (
-            <Label variant="ghost" color={"success"}>
-              {sentenceCase("ADMIN")}
-            </Label>
-          )
-        else
-          return (
-            <Label variant="ghost" color={"success"}>
-              {("Quản trị viên")}
-            </Label>
-          )
-        break;
+        return language === "en" ? (
+          <Label variant="ghost" color={"success"}>
+            {sentenceCase("ADMIN")}
+          </Label>
+        ) : (
+          <Label variant="ghost" color={"success"}>
+            {"Quản trị viên"}
+          </Label>
+        );
       case USER_ROLE.DOCTOR:
-        if(language=="en")
-          return (
-            <Label variant="ghost" color={"info"}>
-              {sentenceCase("DOCTOR")}
-            </Label>
-          )
-        else
-            return (
-              <Label variant="ghost" color={"info"}>
-                {("Bác sĩ")}
-              </Label>
-            )
-        break;
+        return language === "en" ? (
+          <Label variant="ghost" color={"info"}>
+            {sentenceCase("DOCTOR")}
+          </Label>
+        ) : (
+          <Label variant="ghost" color={"info"}>
+            {"Bác sĩ"}
+          </Label>
+        );
       case USER_ROLE.PATIENT:
-        if(language=="en")
-          return (
-            <Label variant="ghost" color={"warning"}>
-              {sentenceCase("PATIENT")}
-            </Label>
-          )
-        else
-          return (
-            <Label variant="ghost" color={"warning"}>
-              {("Bệnh nhân")}
-            </Label>
-          )
-        break;
+        return language === "en" ? (
+          <Label variant="ghost" color={"warning"}>
+            {sentenceCase("PATIENT")}
+          </Label>
+        ) : (
+          <Label variant="ghost" color={"warning"}>
+            {"Bệnh nhân"}
+          </Label>
+        );
       case USER_ROLE.EMPLOYEE:
-        if(language=="en")
-          return (
-            <Label variant="ghost" color={"default"}>
-              {sentenceCase("EMPLOYEE")}
-            </Label>
-          )
-        else
-          return (
-            <Label variant="ghost" color={"default"}>
-              {("Nhân viên")}
-            </Label>
-          )
-        break;
+        return language === "en" ? (
+          <Label variant="ghost" color={"default"}>
+            {sentenceCase("EMPLOYEE")}
+          </Label>
+        ) : (
+          <Label variant="ghost" color={"default"}>
+            {"Nhân viên"}
+          </Label>
+        );
       default:
-        return ""
+        return "";
     }
+  };
 
-  }
-
-  getValuePosition=(positionId)=>{
+  getValuePosition = (positionId) => {
     let language = this.props.language;
-    switch(positionId) {
+    switch (positionId) {
       case USER_POSITION.BACHELOR:
-        if(language=="en") return "Bachelor"
-        else return "Bác sĩ"
-        break;
+        return language === "en" ? "Bachelor" : "Cử nhân";
       case USER_POSITION.MASTER:
-        if(language=="en") return "Master"
-        else return "Thạc sĩ"
-        break;
+        return language === "en" ? "Master" : "Thạc sĩ";
       case USER_POSITION.DOCTOR:
-        if(language=="en") return "Doctor"
-        else return "Tiến sĩ"
-        break;
+        return language === "en" ? "Doctor" : "Tiến sĩ";
       case USER_POSITION.ASSOCIATE_PROFESSOR:
-        if(language=="en") return "Associate professor"
-        else return "Phó giáo sư"
-        break;
+        return language === "en" ? "Associate Professor" : "Phó giáo sư";
       case USER_POSITION.PROFESSOR:
-        if(language=="en") return "Professor"
-        else return "Giáo sư"
-        break;
+        return language === "en" ? "Professor" : "Giáo sư";
       default:
-        return ""
-        break;
+        return "";
     }
-    // {positionId === USER_POSITION.BACHELOR
-    //   ? "Cử nhân"
-    //   : positionId === USER_POSITION.MASTER
-    //   ? "Thạc sĩ"
-    //   : positionId === USER_POSITION.DOCTOR
-    //   ? "Tiến sĩ"
-    //   : positionId === USER_POSITION.ASSOCIATE_PROFESSOR
-    //   ? "Phó giáo sư"
-    //   : positionId === USER_POSITION.PROFESSOR
-    //   ? "Giáo sư"
-    //   : "None"}
-  }
+  };
 
-  getStatus=(statusId)=>{
+  getStatus = (statusId) => {
     let language = this.props.language;
-    switch(statusId) {
+    switch (statusId) {
       case 0:
-        if(language=="en")
-          return (
-            <Label variant="ghost" color={"success"}>
-              {sentenceCase("ACTIVE")}
-            </Label>
-          )
-        else
-          return (
-            <Label variant="ghost" color={"success"}>
-              {("Hoạt động")}
-            </Label>
-          )
+        return language === "en" ? (
+          <Label variant="ghost" color={"success"}>
+            {sentenceCase("ACTIVE")}
+          </Label>
+        ) : (
+          <Label variant="ghost" color={"success"}>
+            {"Hoạt động"}
+          </Label>
+        );
       case 1:
-        if(language=="en")
-          return (
-            <Label variant="ghost" color={"info"}>
-              {sentenceCase("BANNED")}
-            </Label>
-          )
-        else
-            return (
-              <Label variant="ghost" color={"info"}>
-                {("Cấm")}
-              </Label>
-            )
+        return language === "en" ? (
+          <Label variant="ghost" color={"info"}>
+            {sentenceCase("BANNED")}
+          </Label>
+        ) : (
+          <Label variant="ghost" color={"info"}>
+            {"Cấm"}
+          </Label>
+        );
       default:
-        return ""
+        return "";
     }
-
-  }
-
+  };
 
   render() {
     let arrUsers = this.state.usersRedux;
     let language = this.props.language;
-    console.log("arrUsers",arrUsers)
+    const { currentUserRoleId } = this.props; // Lấy roleId từ props được truyền từ UserRedux
+
     return (
       <React.Fragment>
-        {/* <table id="TableManageUser">
-          <tbody>
-            <tr>
-              <th>Email</th>
-              <th>FirstName</th>
-              <th>LastName</th>
-              <th>Address</th>
-              <th>Actions</th>
-            </tr>
-            {arrUsers &&
-              arrUsers.length > 0 &&
-              arrUsers.map((item, index) => {
-                return (
-                  <tr key={index}>
-                    <td>{item.email}</td>
-                    <td>{item.firstName}</td>
-                    <td>{item.lastName}</td>
-                    <td>{item.address}</td>
-                    <td>
-                      <button
-                        onClick={() => this.handleEditUser(item)}
-                        className="btn-edit"
-                      >
-                        <i className="fas fa-pencil-alt"></i>
-                      </button>
-                      <button
-                        className="btn-delete"
-                        onClick={() => this.handleDeleteUser(item)}
-                      >
-                        <i className="fas fa-trash"></i>
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-          </tbody>
-        </table> */}
-
         <Card>
           <Scrollbar>
             <TableContainer sx={{ minWidth: 800 }}>
               <Table>
                 <UserListHead
-                  // order={order}
-                  // orderBy={orderBy}
-                  headLabel={language=="vi" ? TABLE_HEAD_VI : TABLE_HEAD}
-                  // rowCount={USERLIST.length}
-                  // rowCount={USERLIST.length}
-                  // numSelected={selected.length}
-                  // onRequestSort={handleRequestSort}
-                  // onSelectAllClick={handleSelectAllClick}
+                  headLabel={language === "vi" ? TABLE_HEAD_VI : TABLE_HEAD}
                 />
                 <TableBody>
                   {arrUsers.map((row) => {
@@ -323,42 +220,21 @@ class TableManageUser extends Component {
                     } = row;
                     let imageBase64 = "";
                     if (image) {
-                      imageBase64 = new Buffer(image, "base64").toString(
-                        "binary"
-                      );
+                      imageBase64 = new Buffer(image, "base64").toString("binary");
                     }
                     let name = "";
                     if (lastName !== null && firstName != null) {
                       name = `${lastName} ${firstName}`;
-                    }
-                    if (lastName !== null && firstName == null) {
+                    } else if (lastName !== null && firstName == null) {
                       name = `${lastName}`;
-                    }
-                    if (lastName == null && firstName !== null) {
+                    } else if (lastName == null && firstName !== null) {
                       name = `${firstName}`;
                     }
 
                     return (
-                      <TableRow
-                        hover
-                        key={id}
-                        tabIndex={-1}
-                        role="checkbox"
-                        // selected={isItemSelected}
-                        // aria-checked={isItemSelected}
-                      >
-                        {/* <TableCell padding="checkbox">
-                            <Checkbox
-                              // checked={isItemSelected}
-                              onChange={(event) => handleClick(event, name)}
-                            />
-                          </TableCell> */}
+                      <TableRow hover key={id} tabIndex={-1} role="checkbox">
                         <TableCell component="th" scope="row" padding="none">
-                          <Stack
-                            direction="row"
-                            alignItems="center"
-                            spacing={2}
-                          >
+                          <Stack direction="row" alignItems="center" spacing={2}>
                             <Avatar alt={firstName} src={imageBase64} />
                             <Typography variant="subtitle2" noWrap>
                               {name}
@@ -366,82 +242,39 @@ class TableManageUser extends Component {
                           </Stack>
                         </TableCell>
                         <TableCell align="left">{email}</TableCell>
-                        <TableCell align="left">
-                            {this.getValueRole(roleId)}
-                        </TableCell>
+                        <TableCell align="left">{this.getValueRole(roleId)}</TableCell>
                         <TableCell align="left">{address}</TableCell>
-                        <TableCell align="left">
-                          {this.getValuePosition(positionId)}
-                        </TableCell>
-                        <TableCell align="left">
-                          {this.getStatus(status)}
-                        </TableCell>
-
-                        {/* <TableCell align="left">
-                            {isVerified ? "Yes" : "No"}
-                          </TableCell> */}
-                        {/* <TableCell align="left">
-                            <Label
-                              variant="ghost"
-                              color={
-                                (status === "banned" && "error") || "success"
-                              }
-                            >
-                              {sentenceCase(status)}
-                            </Label>
-                          </TableCell> */}
-
+                        <TableCell align="left">{this.getValuePosition(positionId)}</TableCell>
+                        <TableCell align="left">{this.getStatus(status)}</TableCell>
                         <TableCell align="right">
-                          <button
-                            className="btn-edit"
-                            onClick={() => this.handleEditUser(row)}
-                          >
-                            <i className="fas fa-pencil-alt"></i>
-                          </button>
-                          <button
-                            className="btn-delete"
-                            onClick={() => this.handleDeleteUser(row)}
-                          >
-                            <i className="fas fa-trash"></i>
-                          </button>
+                          {/* Chỉ hiển thị nút Edit và Delete nếu roleId là "R1" */}
+                          {currentUserRoleId === "R1" && (
+                            <>
+                              <button
+                                className="btn-edit"
+                                onClick={() => this.handleEditUser(row)}
+                                title="Edit"
+                              >
+                                <i className="fas fa-pencil-alt"></i>
+                              </button>
+                              <button
+                                className="btn-delete"
+                                onClick={() => this.handleDeleteUser(row)}
+                                title="Delete"
+                              >
+                                <i className="fas fa-trash"></i>
+                              </button>
+                            </>
+                          )}
                         </TableCell>
                       </TableRow>
                     );
                   })}
-                  {/* {emptyRows > 0 && (
-                    <TableRow style={{ height: 53 * emptyRows }}>
-                      <TableCell colSpan={6} />
-                    </TableRow>
-                  )} */}
                 </TableBody>
-                {/* {isUserNotFound && (
-                  <TableBody>
-                    <TableRow>
-                      <TableCell align="center" colSpan={6} sx={{ py: 3 }}>
-                        <SearchNotFound searchQuery={filterName} />
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                )} */}
               </Table>
             </TableContainer>
           </Scrollbar>
-
-          {/* <TablePagination
-            rowsPerPageOptions={[5, 10, 25]}
-            component="div"
-            count={USERLIST.length}
-            rowsPerPage={rowsPerPage}
-            page={page}
-            onPageChange={handleChangePage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-          /> */}
         </Card>
-        {/* <MdEditor
-          style={{ height: "500px" }}
-          renderHTML={(text) => mdParser.render(text)}
-          onChange={handleEditorChange}
-        /> */}
       </React.Fragment>
     );
   }
