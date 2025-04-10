@@ -42,7 +42,7 @@ let handleCreateNewUser = async (req, res) => {
     let result = await userService.createNewUser(req.body);
 
     if (result.errCode === 0) {
-      return res.status(201).json(result); // 201 Created nếu tạo thành công
+      return res.status(200).json(result); 
     } else if (result.errCode === 1) {
       return res.status(409).json(result); // 409 Conflict nếu email đã tồn tại
     } else {
